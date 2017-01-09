@@ -138,8 +138,9 @@
 #define CONFIG_EXTRA_ENV_SETTINGS \
 	"script=boot.scr\0" \
 	"image=zImage\0" \
+	"bootdir=/boot\0"	    \
 	"console=ttymxc0\0" \
-	"splashpos=m,m\0" \
+	"splashpos=0,m\0" \
 	"fdtfile=undefined\0" \
 	"fdt_high=0xffffffff\0" \
 	"initrd_high=0xffffffff\0" \
@@ -219,6 +220,22 @@
 		"else " \
 			"bootz; " \
 		"fi;\0" \
+	 "uenvboot=mmc dev ${mmcdev}; " \
+	      "if mmc rescan; then " \
+		   "echo SD/MMC found on device ${mmcdev};" \
+	           "setenv bootpart ${mmcdev}:1; " \
+	           "echo Checking for: ${bootdir}/uEnv.txt ...;" \
+	           "if test -e mmc ${bootpart} ${bootdir}/uEnv.txt; then " \
+	                "load mmc ${bootpart} ${loadaddr} ${bootdir}/uEnv.txt;" \
+	                "env import -t ${loadaddr} ${filesize};" \
+	                "echo Loaded environment from ${bootdir}/uEnv.txt;" \
+	                "echo Checking if uenvcmd is set ...;" \
+	                "if test -n ${uenvcmd}; then " \
+	                    "echo Running uenvcmd ...;" \
+	                     "run uenvcmd;" \
+	                "fi;" \
+	           "fi; " \
+	       "fi;\0"	\
 	"netargs=setenv bootargs console=${console},${baudrate} " \
 		"root=/dev/nfs " \
 	"ip=dhcp nfsroot=${serverip}:${nfsroot},v3,tcp\0" \
@@ -252,6 +269,7 @@
 			"echo WARNING: Could not determine dtb to use; fi; \0" \
 
 #define CONFIG_BOOTCOMMAND \
+           "run uenvboot;"  \
 	   "run findfdt; " \
 	   "mmc dev ${mmcdev}; if mmc rescan; then " \
 		   "if run loadbootscript; then " \
